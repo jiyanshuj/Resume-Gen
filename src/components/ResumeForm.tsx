@@ -25,24 +25,60 @@ interface Certification {
 const ResumeForm = () => {
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
+  const [email, setEmail] = useState('');
+  const [linkedIn, setLinkedIn] = useState('');
+  const [github, setGithub] = useState('');
   const [projects, setProjects] = useState<Project[]>([{ title: '', description: '', techStack: '', link: '' }]);
   const [experiences, setExperiences] = useState<Experience[]>([{ companyName: '', jobTitle: '', duration: '', description: '' }]);
   const [certifications, setCertifications] = useState<Certification[]>([{ title: '', issuer: '', date: '' }]);
   const [technicalSkills, setTechnicalSkills] = useState<string[]>(['']);
   const [softSkills, setSoftSkills] = useState<string[]>(['']);
+  const [education, setEducation] = useState([{ degree: '', institution: '', duration: '' }]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log({
-      name,
-      summary,
-      projects,
-      experiences,
-      certifications,
-      technicalSkills,
-      softSkills
-    });
+
+    const userData = {
+      "Full Name": name,
+      "Email": email,
+      "LinkedIn": linkedIn,
+      "GitHub": github,
+      "Professional Summary": summary,
+      "Projects": projects,
+      "Experiences": experiences,
+      "Certifications": certifications,
+      "Education": education,
+      "TechnicalSkills": technicalSkills,
+      "SoftSkills": softSkills,
+      "Activities": ""
+    };
+
+    try {
+      const response = await fetch('http://localhost:3001/generate_resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate resume');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'resume.docx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to generate and download resume.');
+    }
   };
 
   return (
@@ -68,6 +104,40 @@ const ResumeForm = () => {
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 placeholder="John Doe"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="email@example.com"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">LinkedIn</label>
+              <input
+                type="url"
+                value={linkedIn}
+                onChange={(e) => setLinkedIn(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">GitHub</label>
+              <input
+                type="url"
+                value={github}
+                onChange={(e) => setGithub(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="https://github.com/username"
               />
             </div>
 
@@ -218,7 +288,7 @@ const ResumeForm = () => {
                   }}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   rows={3}
-                  placeholder="Description of responsibilities and achievements"
+                  placeholder="Job Responsibilities"
                 />
               </div>
             ))}
@@ -233,8 +303,8 @@ const ResumeForm = () => {
 
           {/* Certifications Section */}
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Certifications & Achievements</h3>
-            {certifications.map((cert, index) => (
+            <h3 className="text-xl font-semibold">Certifications</h3>
+            {certifications.map((certification, index) => (
               <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="text-lg font-medium">Certification #{index + 1}</h4>
@@ -250,7 +320,7 @@ const ResumeForm = () => {
                 </div>
                 <input
                   type="text"
-                  value={cert.title}
+                  value={certification.title}
                   onChange={(e) => {
                     const newCertifications = [...certifications];
                     newCertifications[index].title = e.target.value;
@@ -261,25 +331,25 @@ const ResumeForm = () => {
                 />
                 <input
                   type="text"
-                  value={cert.issuer}
+                  value={certification.issuer}
                   onChange={(e) => {
                     const newCertifications = [...certifications];
                     newCertifications[index].issuer = e.target.value;
                     setCertifications(newCertifications);
                   }}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Issuing Organization"
+                  placeholder="Issuer"
                 />
                 <input
                   type="text"
-                  value={cert.date}
+                  value={certification.date}
                   onChange={(e) => {
                     const newCertifications = [...certifications];
                     newCertifications[index].date = e.target.value;
                     setCertifications(newCertifications);
                   }}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Date (e.g., January 2023)"
+                  placeholder="Date"
                 />
               </div>
             ))}
@@ -292,85 +362,146 @@ const ResumeForm = () => {
             </button>
           </div>
 
-          {/* Skills Section */}
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Technical Skills</h3>
-              {technicalSkills.map((skill, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={skill}
-                    onChange={(e) => {
-                      const newSkills = [...technicalSkills];
-                      newSkills[index] = e.target.value;
-                      setTechnicalSkills(newSkills);
-                    }}
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="e.g., JavaScript, React, Node.js"
-                  />
-                  {technicalSkills.length > 1 && (
+          {/* Education Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Education</h3>
+            {education.map((edu, index) => (
+              <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-lg font-medium">Education #{index + 1}</h4>
+                  {education.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => setTechnicalSkills(technicalSkills.filter((_, i) => i !== index))}
+                      onClick={() => setEducation(education.filter((_, i) => i !== index))}
                       className="text-red-500 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
                   )}
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setTechnicalSkills([...technicalSkills, ''])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus className="w-5 h-5" /> Add Technical Skill
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Soft Skills</h3>
-              {softSkills.map((skill, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={skill}
-                    onChange={(e) => {
-                      const newSkills = [...softSkills];
-                      newSkills[index] = e.target.value;
-                      setSoftSkills(newSkills);
-                    }}
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="e.g., Leadership, Communication, Team Management"
-                  />
-                  {softSkills.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setSoftSkills(softSkills.filter((_, i) => i !== index))}
-                      className="text-red-500 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setSoftSkills([...softSkills, ''])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus className="w-5 h-5" /> Add Soft Skill
-              </button>
-            </div>
+                <input
+                  type="text"
+                  value={edu.degree}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].degree = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Degree (e.g., Bachelor of Science in Computer Science)"
+                  required
+                />
+                <input
+                  type="text"
+                  value={edu.institution}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].institution = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Institution Name"
+                  required
+                />
+                <input
+                  type="text"
+                  value={edu.duration}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].duration = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Duration (e.g., 2016 - 2020)"
+                  required
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setEducation([...education, { degree: '', institution: '', duration: '' }])}
+              className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" /> Add Education
+            </button>
           </div>
 
-          {/* Submit Button */}
+          {/* Skills Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Technical Skills</h3>
+            {technicalSkills.map((skill, index) => (
+              <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
+                <input
+                  type="text"
+                  value={skill}
+                  onChange={(e) => {
+                    const newSkills = [...technicalSkills];
+                    newSkills[index] = e.target.value;
+                    setTechnicalSkills(newSkills);
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Skill"
+                />
+                {technicalSkills.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setTechnicalSkills(technicalSkills.filter((_, i) => i !== index))}
+                    className="text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setTechnicalSkills([...technicalSkills, ''])}
+              className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" /> Add Skill
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Soft Skills</h3>
+            {softSkills.map((skill, index) => (
+              <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
+                <input
+                  type="text"
+                  value={skill}
+                  onChange={(e) => {
+                    const newSkills = [...softSkills];
+                    newSkills[index] = e.target.value;
+                    setSoftSkills(newSkills);
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Skill"
+                />
+                {softSkills.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setSoftSkills(softSkills.filter((_, i) => i !== index))}
+                    className="text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setSoftSkills([...softSkills, ''])}
+              className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" /> Add Skill
+            </button>
+          </div>
+
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors"
           >
-            <Save className="w-5 h-5" /> Save Resume
+            <Save className="w-5 h-5 inline-block mr-2" /> Save Resume
           </button>
         </div>
       </form>
