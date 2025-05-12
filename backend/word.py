@@ -1,150 +1,147 @@
 from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 def create_modern_clean_template(output_path, user_data):
     doc = Document()
 
-    # Name (Big Font, Centered)
+    # Full Name (Centered, Big)
     name = doc.add_paragraph()
     name.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = name.add_run(user_data.get("Full Name", ""))
     run.font.size = Pt(18)
     run.bold = True
 
-    # Contact Info (Smaller Font, Centered)
-    contact = doc.add_paragraph()
-    contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = contact.add_run(
-        f"{user_data.get('Address', '')} | {user_data.get('Phone', '')} | {user_data.get('Email', '')} | {user_data.get('LinkedIn', '')} | {user_data.get('GitHub', '')}"
-    )
-    run.font.size = Pt(10)
-    font = run.font
-    font.color.rgb = RGBColor(100, 100, 100)  # Light Gray
+    # Contact Info (Links in Blue and Comma-separated, Centered)
+    contact_parts = []
+    for field in ["Email", "LinkedIn", "GitHub"]:
+        value = user_data.get(field, "")
+        if value:
+            contact_parts.append(value)
 
-    # Add spacing
-    doc.add_paragraph()
+    if contact_parts:
+        contact = doc.add_paragraph()
+        contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for i, value in enumerate(contact_parts):
+            # Add a link-style for email, LinkedIn, and GitHub
+            run = contact.add_run(value)
+            run.font.size = Pt(10)
+            run.font.color.rgb = RGBColor(0, 0, 255)  # Blue color for links
+            run.underline = True
+            # Add a comma separator except for the last link
+            if i < len(contact_parts) - 1:
+                contact.add_run(", ")
 
-    # Professional Summary
+        doc.add_paragraph()  # spacing
+
+    # Resume Sections
     add_section(doc, "Professional Summary", user_data.get("Professional Summary", ""))
 
-    # Experience
-    add_section(doc, "Experience", user_data.get("Experience", ""))
+    add_multientry_section(doc, "Projects", user_data.get("Projects", []), [
+        ("Project Title", "title"),
+        ("Project Description", "description"),
+        ("Technologies Used", "techStack"),
+        ("Project URL", "link")
+    ])
 
-    # Projects
-    add_section(doc, "Projects", user_data.get("Projects", ""))
+    add_multientry_section(doc, "Work Experience", user_data.get("Experiences", []), [
+        ("Company Name", "companyName"),
+        ("Job Title", "jobTitle"),
+        ("Duration", "duration"),
+        ("Job Responsibilities", "description")
+    ])
 
-    # Skills
-    add_section(doc, "Skills", user_data.get("Skills", ""))
+    add_multientry_section(doc, "Certifications", user_data.get("Certifications", []), [
+        ("Certification Title", "title"),
+        ("Issuer", "issuer"),
+        ("Date", "date")
+    ])
 
-    # Education
-    add_section(doc, "Education", user_data.get("Education", ""))
+    add_multientry_section(doc, "Education", user_data.get("Education", []), [
+        ("Degree", "degree"),
+        ("Institution Name", "institution"),
+        ("Duration", "duration")
+    ])
 
-    # Activities
-    add_section(doc, "Activities", user_data.get("Activities", ""))
+    # Skills (comma-separated)
+    add_skill_section(doc, "Technical Skills", user_data.get("TechnicalSkills", []))
+    add_skill_section(doc, "Soft Skills", user_data.get("SoftSkills", []))
 
-    # Save the template
     doc.save(output_path)
 
+
 def add_section(doc, title, content):
-    # Section Title
+    if not content.strip():
+        return
     heading = doc.add_paragraph()
     heading_run = heading.add_run(title)
     heading_run.bold = True
     heading_run.font.size = Pt(14)
     heading_run.font.underline = True
 
-    # Section Content
-    content_para = doc.add_paragraph()
-    content_run = content_para.add_run(content)
-    content_run.font.size = Pt(12)
+    para = doc.add_paragraph()
+    para.add_run(content).font.size = Pt(12)
 
-# Usage Example
-if __name__ == "__main__":
-    # Sample user data dictionary
-    user_data = {
-        "Full Name": "John Doe",
-        "Address": "123 Main Street, City, Country",
-        "Phone": "+1234567890",
-        "Email": "john@example.com",
-        "LinkedIn": "linkedin.com/in/johndoe",
-        "GitHub": "github.com/johndoe",
-        "Professional Summary": "Experienced developer with a passion for coding.",
-        "Experience": "Software Developer at XYZ Corp (2020-2023)",
-        "Projects": "- Project A: Description\n- Project B: Description",
-        "Skills": "Python, Java, SQL",
-        "Education": "B.Tech in Computer Science, ABC University, 2020, 8.5 CGPA",
-        "Activities": "Hackathons, Open-source contributions"
-    }
 
-    create_modern_clean_template("modern_clean_resume.docx", user_data)
-    print("Modern clean resume created successfully!")
+def add_multientry_section(doc, title, entries, fields):
+    if not entries:
+        return
+
+    heading = doc.add_paragraph()
+    heading_run = heading.add_run(title)
+    heading_run.bold = True
+    heading_run.font.size = Pt(14)
+    heading_run.font.underline = True
+
+    for entry in entries:
+        for label, key in fields:
+            value = entry.get(key, "")
+            if value:
+                bullet_para = doc.add_paragraph(style="List Bullet")
+                label_run = bullet_para.add_run(f"{label}: ")
+                label_run.font.size = Pt(12)
+                label_run.bold = True
+
+                value_run = bullet_para.add_run(str(value))
+                value_run.font.size = Pt(12)
+
+        doc.add_paragraph()  # Space between entries
+
+
+def add_skill_section(doc, title, skills):
+    if not skills:
+        return
+
+    heading = doc.add_paragraph()
+    heading_run = heading.add_run(title)
+    heading_run.bold = True
+    heading_run.font.size = Pt(14)
+    heading_run.font.underline = True
+
+    skill_text = ", ".join(skills)
+    para = doc.add_paragraph()
+    para.add_run(skill_text).font.size = Pt(12)
 
 
 def generate_resume_from_form_data(user_data, output_path):
     """
-    Transforms user data from ResumeForm format to the format expected by create_modern_clean_template,
-    then calls create_modern_clean_template to generate the resume document.
+    Transforms user data and calls create_modern_clean_template to generate the resume document.
     """
-    transformed_data = {}
-
-    transformed_data["Full Name"] = user_data.get("Full Name", "")
-    transformed_data["Email"] = user_data.get("Email", "")
-    transformed_data["LinkedIn"] = user_data.get("LinkedIn", "")
-    transformed_data["GitHub"] = user_data.get("GitHub", "")
-    transformed_data["Professional Summary"] = user_data.get("Professional Summary", "")
-
-    # Transform projects array to string
-    projects = user_data.get("Projects", [])
-    if isinstance(projects, list):
-        projects_str = "\n\n".join(
-            [f"Title: {p.get('title', '')}\nDescription: {p.get('description', '')}\nTech Stack: {p.get('techStack', '')}\nLink: {p.get('link', '')}" for p in projects]
-        )
-    else:
-        projects_str = ""
-    transformed_data["Projects"] = projects_str
-
-    # Transform experiences array to string
-    experiences = user_data.get("Experiences", []) or user_data.get("Experience", [])
-    if isinstance(experiences, list):
-        experiences_str = "\n\n".join(
-            [f"Company: {e.get('companyName', '')}\nJob Title: {e.get('jobTitle', '')}\nDuration: {e.get('duration', '')}\nDescription: {e.get('description', '')}" for e in experiences]
-        )
-    else:
-        experiences_str = ""
-    transformed_data["Experience"] = experiences_str
-
-    # Transform certifications array to string
-    certifications = user_data.get("Certifications", []) or user_data.get("Certification", [])
-    if isinstance(certifications, list):
-        certifications_str = "\n\n".join(
-            [f"Title: {c.get('title', '')}\nIssuer: {c.get('issuer', '')}\nDate: {c.get('date', '')}" for c in certifications]
-        )
-    else:
-        certifications_str = ""
-    transformed_data["Certifications"] = certifications_str
-
-    # Transform education array to string
-    education = user_data.get("Education", [])
-    if isinstance(education, list):
-        education_str = "\n\n".join(
-            [f"Degree: {edu.get('degree', '')}\nInstitution: {edu.get('institution', '')}\nDuration: {edu.get('duration', '')}" for edu in education]
-        )
-    else:
-        education_str = ""
-    transformed_data["Education"] = education_str
-
-    # Combine technicalSkills and softSkills into Skills string
-    technical_skills = user_data.get("TechnicalSkills", []) or user_data.get("technicalSkills", [])
-    soft_skills = user_data.get("SoftSkills", []) or user_data.get("softSkills", [])
-    skills_list = []
-    if isinstance(technical_skills, list):
-        skills_list.extend(technical_skills)
-    if isinstance(soft_skills, list):
-        skills_list.extend(soft_skills)
-    transformed_data["Skills"] = ", ".join(skills_list)
-
-    # Activities can be empty or added later
-    transformed_data["Activities"] = ""
+    transformed_data = {
+        "Full Name": user_data.get("Full Name", ""),
+        "Email": user_data.get("Email", ""),
+        "LinkedIn": user_data.get("LinkedIn", ""),
+        "GitHub": user_data.get("GitHub", ""),
+        "Professional Summary": user_data.get("Professional Summary", ""),
+        "Projects": user_data.get("Projects", []),
+        "Experiences": user_data.get("Experiences", []) or user_data.get("Experience", []),
+        "Certifications": user_data.get("Certifications", []) or user_data.get("Certification", []),
+        "Education": user_data.get("Education", []),
+        "TechnicalSkills": user_data.get("TechnicalSkills", []) or user_data.get("technicalSkills", []),
+        "SoftSkills": user_data.get("SoftSkills", []) or user_data.get("softSkills", []),
+    }
 
     create_modern_clean_template(output_path, transformed_data)
+

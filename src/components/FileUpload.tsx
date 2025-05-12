@@ -14,6 +14,16 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
       const fileType = file.name.split('.').pop()?.toLowerCase();
       if (fileType === 'pdf' || fileType === 'docx') {
         onFileSelect(file);
+
+        // Trigger download to store file locally
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
     }
   }, [onFileSelect]);
@@ -22,9 +32,9 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     },
-    maxFiles: 1
+    maxFiles: 1,
   });
 
   return (
@@ -42,9 +52,11 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-            isDragActive ? 'border-blue-500 bg-blue-500/10' : 
-            isDragReject ? 'border-red-500 bg-red-500/10' : 
-            'border-gray-700 hover:border-gray-600'
+            isDragActive
+              ? 'border-blue-500 bg-blue-500/10'
+              : isDragReject
+              ? 'border-red-500 bg-red-500/10'
+              : 'border-gray-700 hover:border-gray-600'
           }`}
         >
           <input {...getInputProps()} />

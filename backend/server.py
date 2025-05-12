@@ -1,114 +1,205 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+"""
+This file combines all necessary backend components to connect the React frontend with Flask.
+It includes both the server configuration and ensuring proper data flow between components.
+"""
+
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS, cross_origin
 import psycopg2
 import bcrypt
-from word import create_modern_clean_template
 import os
 import traceback
+import json
+
+# Import the resume generation code
+from docx import Document
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+
+def create_modern_clean_template(output_path, user_data):
+    doc = Document()
+
+    # Full Name (Centered, Big)
+    name = doc.add_paragraph()
+    name.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = name.add_run(user_data.get("Full Name", ""))
+    run.font.size = Pt(18)
+    run.bold = True
+
+    # Contact Info (Links in Blue and Comma-separated, Centered)
+    contact_parts = []
+    for field in ["Email", "LinkedIn", "GitHub"]:
+        value = user_data.get(field, "")
+        if value:
+            contact_parts.append(value)
+
+    if contact_parts:
+        contact = doc.add_paragraph()
+        contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for i, value in enumerate(contact_parts):
+            # Add a link-style for email, LinkedIn, and GitHub
+            run = contact.add_run(value)
+            run.font.size = Pt(10)
+            run.font.color.rgb = RGBColor(0, 0, 255)  # Blue color for links
+            run.underline = True
+            # Add a comma separator except for the last link
+            if i < len(contact_parts) - 1:
+                contact.add_run(", ")
+
+        doc.add_paragraph()  # spacing
+
+    # Resume Sections
+    add_section(doc, "Professional Summary", user_data.get("Professional Summary", ""))
+
+    add_multientry_section(doc, "Projects", user_data.get("Projects", []), [
+        ("Project Title", "title"),
+        ("Project Description", "description"),
+        ("Technologies Used", "techStack"),
+        ("Project URL", "link")
+    ])
+
+    add_multientry_section(doc, "Work Experience", user_data.get("Experiences", []), [
+        ("Company Name", "companyName"),
+        ("Job Title", "jobTitle"),
+        ("Duration", "duration"),
+        ("Job Responsibilities", "description")
+    ])
+
+    add_multientry_section(doc, "Certifications", user_data.get("Certifications", []), [
+        ("Certification Title", "title"),
+        ("Issuer", "issuer"),
+        ("Date", "date")
+    ])
+
+    add_multientry_section(doc, "Education", user_data.get("Education", []), [
+        ("Degree", "degree"),
+        ("Institution Name", "institution"),
+        ("Duration", "duration")
+    ])
+
+    # Skills (comma-separated)
+    add_skill_section(doc, "Technical Skills", user_data.get("TechnicalSkills", []))
+    add_skill_section(doc, "Soft Skills", user_data.get("SoftSkills", []))
+
+    doc.save(output_path)
+
+
+def add_section(doc, title, content):
+    if not content or not content.strip():
+        return
+        
+    heading = doc.add_paragraph()
+    heading_run = heading.add_run(title)
+    heading_run.bold = True
+    heading_run.font.size = Pt(14)
+    heading_run.font.underline = True
+
+    para = doc.add_paragraph()
+    para.add_run(content).font.size = Pt(12)
+
+
+def add_multientry_section(doc, title, entries, fields):
+    if not entries:
+        return
+
+    heading = doc.add_paragraph()
+    heading_run = heading.add_run(title)
+    heading_run.bold = True
+    heading_run.font.size = Pt(14)
+    heading_run.font.underline = True
+
+    for entry in entries:
+        for label, key in fields:
+            value = entry.get(key, "")
+            if value:
+                bullet_para = doc.add_paragraph(style="List Bullet")
+                label_run = bullet_para.add_run(f"{label}: ")
+                label_run.font.size = Pt(12)
+                label_run.bold = True
+
+                value_run = bullet_para.add_run(str(value))
+                value_run.font.size = Pt(12)
+
+        doc.add_paragraph()  # Space between entries
+
+
+def add_skill_section(doc, title, skills):
+    if not skills:
+        return
+
+    heading = doc.add_paragraph()
+    heading_run = heading.add_run(title)
+    heading_run.bold = True
+    heading_run.font.size = Pt(14)
+    heading_run.font.underline = True
+
+    skill_text = ", ".join(skills)
+    para = doc.add_paragraph()
+    para.add_run(skill_text).font.size = Pt(12)
+
 
 # Initialize Flask app
 app = Flask(__name__)
-from flask_cors import cross_origin
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})  # This enables CORS for all routes
 
-# Connect to PostgreSQL database
+# Database connection (optional, if you need to save resumes)
 try:
     conn = psycopg2.connect(
-        dbname="resumeDB",          # your database name
-        user="postgres",            # your postgres username
-        password="112255",  # your postgres password here
+        dbname="resumeDB",
+        user="postgres",
+        password="112255",
         host="localhost",
         port="5432"
     )
-    conn.autocommit = True  # Important! So changes are saved without needing conn.commit()
+    conn.autocommit = True
     cur = conn.cursor()
     print("✅ Database connected successfully!")
 except Exception as e:
     print("❌ Failed to connect to database:", e)
+    print("Continuing without database connection...")
+    conn = None
+    cur = None
 
-# Signup route
-@app.route('/signup', methods=['POST'])
-def signup():
-    data = request.get_json()
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-
-    if not username or not email or not password:
-        return jsonify({'message': 'Please provide username, email, and password.'}), 400
-
-    try:
-        # Check if user already exists
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-        if cur.fetchone():
-            return jsonify({'message': 'User already exists!'})
-
-        # Hash password
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-        # Insert new user
-        cur.execute(
-            "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
-            (username, email, hashed_password.decode('utf-8'))
-        )
-
-        print(f"✅ New user '{username}' inserted successfully!")
-        return jsonify({'message': 'Signup successful!'})
-
-    except Exception as e:
-        print("❌ Error during signup:", e)
-        return jsonify({'message': 'Server error during signup.'}), 500
-
-# Login route
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-
-    if not username or not password:
-        return jsonify({'message': 'Please provide username and password.'}), 400
-
-    try:
-        # Find user
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-
-        if not user:
-            return jsonify({'message': 'User not found'})
-
-        stored_password = user[3]  # Assuming password is 4th column in table
-
-        # Compare passwords
-        if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
-            print(f"✅ User '{username}' logged in successfully!")
-            return jsonify({'message': f'Welcome back, {username}!'})
-
-        return jsonify({'message': 'Invalid credentials'})
-
-    except Exception as e:
-        print("❌ Error during login:", e)
-        return jsonify({'message': 'Server error during login.'}), 500
-
-# Start the server
-if __name__ == '__main__':
-    app.run(port=3001, debug=True)
-
-# New route to generate resume document
-from flask import send_file
+# ---------------- RESUME GENERATION ----------------
 
 @app.route('/generate_resume', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def generate_resume():
-    user_data = request.get_json()
-    if not user_data:
-        return jsonify({'message': 'No user data provided'}), 400
-
-    output_path = os.path.join(os.getcwd(), 'generated_resume.docx')
+    if request.method == 'OPTIONS':
+        # Pre-flight request handling for CORS
+        return jsonify({}), 200
+        
     try:
+        user_data = request.get_json()
+        if not user_data:
+            return jsonify({'message': 'No user data provided'}), 400
+
+        # Debug: Print the received data
+        print("Received data for resume generation:")
+        print(json.dumps(user_data, indent=2))
+
+        output_path = os.path.join(os.getcwd(), 'generated_resume.docx')
         create_modern_clean_template(output_path, user_data)
-        return send_file(output_path, as_attachment=True, download_name='resume.docx')
+        
+        # Log success
+        print(f"✅ Resume generated successfully at {output_path}")
+        
+        # Return the file
+        return send_file(
+            output_path, 
+            as_attachment=True, 
+            download_name='resume.docx',
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
     except Exception as e:
-        print(f"Error generating resume: {str(e)}")
+        print(f"❌ Error generating resume: {str(e)}")
         traceback.print_exc()
         return jsonify({'message': f'Error generating resume: {str(e)}'}), 500
+
+# ---------------- SERVER START ----------------
+
+if __name__ == '__main__':
+    print("Starting Resume Builder API on http://localhost:3001")
+    app.run(host='0.0.0.0', port=3001, debug=True)
