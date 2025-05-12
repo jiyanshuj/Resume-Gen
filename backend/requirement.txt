@@ -1,5 +1,6 @@
-flask
-flask-cors
-psycopg2
-bcrypt
-google-generativeai
+Flask==2.3.2
+flask-cors==3.0.10
+psycopg2-binary==2.9.9
+bcrypt==4.1.2
+python-docx==1.1.0
+gunicorn==21.2.0
