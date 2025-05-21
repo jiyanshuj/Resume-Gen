@@ -242,8 +242,10 @@ def generate_resume():
         traceback.print_exc()
         return jsonify({'message': f'Error generating resume: {e}'}), 500
 
-@app.route("/", methods=["GET", "HEAD"])
+@app.route("/", methods=["GET", "HEAD", "POST"])
 def home():
+    if request.method == "POST":
+        return "Root route reached. Please use /generate_resume for POST.", 200
     return "Resume Builder API is running!", 200
 # ---------------- SERVER START ----------------
 if __name__ == '__main__':
