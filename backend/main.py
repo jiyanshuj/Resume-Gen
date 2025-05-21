@@ -242,7 +242,9 @@ def generate_resume():
         traceback.print_exc()
         return jsonify({'message': f'Error generating resume: {e}'}), 500
 
-
+@app.route("/", methods=["GET", "HEAD"])
+def home():
+    return "Resume Builder API is running!", 200
 # ---------------- SERVER START ----------------
 if __name__ == '__main__':
     print("Starting Resume Builder API on http://localhost:3001")
