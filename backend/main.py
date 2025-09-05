@@ -218,7 +218,7 @@ def signup():
         return jsonify({'message': f'Signup failed: {str(e)}'}), 500
 
 # ---------------- RESUME GENERATION ----------------
-@app.route('/generate_resume', methods=['POST', 'OPTIONS'])
+@app.route('/generate', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def generate_resume():
     if request.method == 'OPTIONS':
@@ -231,16 +231,11 @@ def generate_resume():
         print("Received data for resume generation:")
         print(json.dumps(user_data, indent=2))
 
-        output_path = os.path.join(os.getcwd(), 'generated_resume.docx')
+        output_path = 'resume.docx'
         create_modern_clean_template(output_path, user_data)
 
         print(f"✅ Resume generated at {output_path}")
-        return send_file(
-            output_path,
-            as_attachment=True,
-            download_name='resume.docx',
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        return send_file("resume.docx", as_attachment=True)
     except Exception as e:
         print(f"❌ Error generating resume: {e}")
         traceback.print_exc()
