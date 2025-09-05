@@ -28,7 +28,7 @@ const LoginSignupPage: React.FC = () => {
 
   const handleSignup = async () => {
     try {
-      const response = await axios.post('http://localhost:3001/signup', { username, email, password });
+      const response = await axios.post('https://resume-gen-backend.onrender.com/signup', { username, email, password });
       setMessage(response.data.message);
       localStorage.setItem('username', username); // Save username
       setUsername('');
