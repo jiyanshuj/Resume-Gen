@@ -54,7 +54,7 @@ const ResumeForm = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3001/generate_resume', {
+      const response = await fetch('https://resume-gen-backend.onrender.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

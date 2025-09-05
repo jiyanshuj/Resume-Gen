@@ -131,6 +131,10 @@ def add_skill_section(doc, title, skills):
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.route("/")
+def home():
+    return "Backend is running 🚀"
+
 # Database connection
 try:
     conn = psycopg2.connect(
