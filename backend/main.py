@@ -134,11 +134,11 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # Database connection
 try:
     conn = psycopg2.connect(
-        dbname="resumeDB",
-        user="postgres",
-        password="112255",
-        host="localhost",
-        port="5432"
+        dbname=os.environ.get("DB_NAME", "resumeDB"),
+        user=os.environ.get("DB_USER", "postgres"),
+        password=os.environ.get("DB_PASSWORD", "112255"),
+        host=os.environ.get("DB_HOST", "localhost"),
+        port=os.environ.get("DB_PORT", "5432")
     )
     conn.autocommit = True
     cur = conn.cursor()
@@ -242,11 +242,7 @@ def generate_resume():
         traceback.print_exc()
         return jsonify({'message': f'Error generating resume: {e}'}), 500
 
-@app.route("/", methods=["GET", "HEAD", "POST"])
-def home():
-    if request.method == "POST":
-        return "Root route reached. Please use /generate_resume for POST.", 200
-    return "Resume Builder API is running!", 200
+
 # ---------------- SERVER START ----------------
 if __name__ == '__main__':
     print("Starting Resume Builder API on http://localhost:3001")

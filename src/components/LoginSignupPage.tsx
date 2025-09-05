@@ -13,7 +13,7 @@ const LoginSignupPage: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('https://resume-gen-1.onrender.com/login', { username, password });
+      const response = await axios.post('http://localhost:3001/login', { username, password });
       setMessage(response.data.message);
       localStorage.setItem('username', username); // Save username
       setUsername('');
@@ -28,7 +28,7 @@ const LoginSignupPage: React.FC = () => {
 
   const handleSignup = async () => {
     try {
-      const response = await axios.post('https://resume-gen-1.onrender.com/signup', { username, email, password });
+      const response = await axios.post('http://localhost:3001/signup', { username, email, password });
       setMessage(response.data.message);
       localStorage.setItem('username', username); // Save username
       setUsername('');
