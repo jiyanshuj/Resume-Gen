@@ -62,7 +62,7 @@ Resume Gen/
 
 ## 🎨 Application Screenshots & Features
 
-> **📸 Note:** To display all images in the README, please capture screenshots of your application and save them to the `images/` folder. See [IMAGES_GUIDE.md](./IMAGES_GUIDE.md) for detailed instructions on what screenshots to capture and how to save them.
+> **📸 Note:** To display all images in the README, please capture screenshots of your application and save them to the `images/` folder.
 
 ### 1. Landing Page - Hero Section
 The application welcomes users with a modern, animated hero section featuring:
@@ -102,13 +102,9 @@ Comprehensive education tracking:
 - Duration (Start and End Year)
 - Add/Remove education entries
 
-**Sample Data:**
-- B.Tech from SVIT (2022-26)
-- 12th from Swami Vivekanand Model School (2022)
-
 ![Education Section](./images/04-education-section.png)
 
-### 5. Resume Form - Work Experience Section
+### 5. Resume Form - Work Experience & Certifications Section
 Track professional experience:
 - Company Name
 - Job Title
@@ -116,11 +112,11 @@ Track professional experience:
 - Job Description/Responsibilities
 - Multiple experience entries support
 
-**Sample Experience:**
-- **Company:** Hired Easy
-- **Position:** Software Engineer Intern
-- **Duration:** Jan 2026 - Present
-- **Description:** Developing a machine learning-powered web application for disease prediction
+**Certifications:**
+Additional sections for:
+- Certification Title
+- Issuing Organization
+- Date Obtained
 
 ![Work Experience & Certifications Section](./images/05-work-experience-certifications.png)
 
@@ -139,19 +135,7 @@ Two-tier skill system:
 
 ![Skills Section](./images/06-skills-section.png)
 
-### 7. Resume Form - Certifications & Projects
-Additional sections for:
-- Certification Title
-- Issuing Organization
-- Date Obtained
-- Project Showcase
-
-**Sample Certification:**
-- Microsoft Learn Certified (2024)
-
-*Note: This is shown in the same screenshot as section 5 above - scroll down to see certifications*
-
-### 8. Generated Resume Output Example
+### 7. Generated Resume Output Example
 
 **Actual Generated Resume (Jiyanushu Jain):**
 
@@ -197,34 +181,6 @@ Hi, I'm Jiyanushu Jain, a Computer Science student focused on building intellige
 - **Certification Title:** Microsoft Learn Certified
   - **Issuer:** Microsoft
   - **Date:** 2024
-
----
-
-### 9. Login & Authentication
-Secure user authentication system with:
-- Email/Password based signup
-- Bcrypt password hashing
-- Session management
-- User profile tracking
-
-![Login Page](./images/09-login-signup-page.png)
-
-### 10. Features Showcase Page
-Highlights application capabilities:
-- Resume customization
-- Multiple template options
-- Real-time preview
-- One-click download
-- ATS optimization
-
-![Features Page](./images/10-features-page.png)
-
-### 11. About Us & Contact
-Information about the platform and contact details for support and feedback.
-
-![About Page](./images/11-about-page.png)
-
-![Contact Page](./images/12-contact-page.png)
 
 ---
 
@@ -287,7 +243,7 @@ Information about the platform and contact details for support and feedback.
 
 ```bash
 # Navigate to project root
-cd "d:\Projects\Resume Gen"
+cd "Resume Gen"
 
 # Install dependencies
 npm install
@@ -564,9 +520,9 @@ We welcome contributions! Please follow these steps:
 ## 📞 Support & Contact
 
 For questions, suggestions, or bug reports:
-- **Email:** support@nextstep-cv.com
-- **GitHub Issues:** [Create an issue](https://github.com/yourusername/resume-gen/issues)
-- **LinkedIn:** [Connect with us](https://linkedin.com)
+- **Email:** jainjiyanushu@gmail.com
+- **GitHub:** https://github.com/jiyansuj
+- **LinkedIn:** https://www.linkedin.com/in/jiyanushu-jain/
 
 ---
 
@@ -580,6 +536,6 @@ For questions, suggestions, or bug reports:
 
 ---
 
-**Made with ❤️ by the NextStep CV Team**
+**Made with ❤️ by Jiyanushu Jain**
 
 *Last Updated: January 2026*
